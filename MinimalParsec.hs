@@ -77,6 +77,11 @@ instance (Monad m) => MonadPlus (PDParsecT s m) where
 instance (Monad m) => Fail.MonadFail (PDParsecT s m) where
   fail = PDParsecT . StateT . const . ExceptT . return . Left
 
+instance MonadTrans (PDParsecT s) where
+  lift m = PDParsecT . StateT $ \s -> ExceptT . WriterT $ do
+    a <- m
+    return (Right (a, s), mempty)
+
 itemPD :: (Monad m, Stream s t) => (t -> Maybe a) -> PDParsecT s m a
 itemPD f = do
   s <- get
