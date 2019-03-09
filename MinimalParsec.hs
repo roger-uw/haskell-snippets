@@ -3,6 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module MinimalParsec where
 
@@ -61,6 +62,7 @@ evalPDParsecT p = fmap (either (Left . id) (Right . fst) . fst) . runPDParsecT p
 
 isConsumed = getAny . snd
 isFailed = isLeft . fst
+isSucc = isRight . fst
 
 instance (Monad m) => Alternative (PDParsecT s m) where
   empty = PDParsecT empty
@@ -68,7 +70,9 @@ instance (Monad m) => Alternative (PDParsecT s m) where
     rA <- runPDParsecT pA s
     if isConsumed rA then return rA else do
       rB <- runPDParsecT pB s
-      return (if isFailed rA || isConsumed rB then rB else rA)
+      return $ if | isConsumed rB -> rB
+                  | isSucc rA -> rA
+                  | otherwise -> case fst rB of {Left "" -> rA; _ -> rB}
 
 instance (Monad m) => MonadPlus (PDParsecT s m) where
   mzero = empty
