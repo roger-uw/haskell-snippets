@@ -47,6 +47,13 @@ itemBT f = do
       Nothing -> Fail.fail "mismatched token"
       Just a -> put s' >> return a
 
+eofBT :: (Fail.MonadFail m, Stream s t) => BTParsecT s m ()
+eofBT = do
+  s <- get
+  case uncons s of
+    Nothing -> return ()
+    _ -> Fail.fail "unexpected token"
+
 -- | Predictive Parser
 -- @s -> m (Either String (a, s), Any)@
 -- 
@@ -99,6 +106,13 @@ tryPD :: (Monad m) => PDParsecT s m a -> PDParsecT s m a
 tryPD p = PDParsecT . StateT $ \s -> ExceptT . WriterT $ do
   r @ (e, consumed) <- runPDParsecT p s
   return (if getAny consumed && isLeft e then (e, Any False) else r)
+
+eofPD :: (Monad m, Stream s t) => PDParsecT s m ()
+eofPD = do
+  s <- get
+  case uncons s of
+    Nothing -> return ()
+    _ -> Fail.fail "unexpected token"
 
 -- | Sample parser combinators
 charBT :: (Fail.MonadFail m, Stream s Char) => Char -> BTParsecT s m Char
