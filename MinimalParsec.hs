@@ -104,8 +104,8 @@ itemPD f = do
 
 tryPD :: (Monad m) => PDParsecT s m a -> PDParsecT s m a
 tryPD p = PDParsecT . StateT $ \s -> ExceptT . WriterT $ do
-  r @ (e, consumed) <- runPDParsecT p s
-  return (if getAny consumed && isLeft e then (e, Any False) else r)
+  r @ (e, _) <- runPDParsecT p s
+  return (if isLeft e then (e, Any False) else r)
 
 eofPD :: (Monad m, Stream s t) => PDParsecT s m ()
 eofPD = do
